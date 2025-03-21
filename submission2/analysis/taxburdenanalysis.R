@@ -13,27 +13,25 @@ final.data.q1 <- final.data %>%
   ungroup()
 
 ### calculate proportion of states with tax change 
-taxchange.proportion <- final.data.q1 %>%
+tax.change.proportion <- final.data.q1 %>%
   group_by(Year) %>%
   summarize(proportion_change = mean(tax_change, na.rm = TRUE))
 
 ### plot the bar graph
-taxchange.plot <- ggplot(taxchange.proportion, aes(x = Year, y = proportion_change)) +
-  geom_bar(stat = "identity", fill = "#268bca") +
-  labs(title = "Proportion of States with Cigarette Tax Changes from 1970-1985",
+tax.change.plot <- ggplot(tax.change.proportion, aes(x = Year, y = proportion_change)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Proportion of States with Cigarette Tax Changes",
        x = "Year",
        y = "Proportion of States") +
   theme_minimal()
-print(taxchange.plot)
+print(tax.change.plot)
 
 
 # 2. Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.
-cpi_2012 <- cpi.data %>% filter(Year == 2012) %>% pull(index)
-
 ### adjust taxes to 2012 values 
 final.data <- final.data %>%
-  mutate(price_real = cost_per_pack * (cpi_2012/index),
-         tax_real = tax_dollar * (cpi_2012/index))
+  mutate(price_real = cost_per_pack * (230/index),
+         tax_real = tax_dollar * (230/index))
 
 ### plot the data
 tax.plot <- final.data %>%
@@ -42,27 +40,29 @@ tax.plot <- final.data %>%
   summarize(avg_tax = mean(tax_real, na.rm = TRUE),
             avg_price = mean(price_real, na.rm = TRUE))
 
-taxprice.plot <- ggplot(tax.plot, aes(x = Year)) +
-  geom_line(aes(y = avg_tax, color = "Average Tax (2012$)"), linewidth = 1.2) +
-  geom_line(aes(y = avg_price, color = "Average Price (2012$)"), linewidth = 1.2) +
-  labs(title = "Average Tax and Price of Cigarettes 1970-2018 Adjusted to 2012 dollars",
+tax.price.plot <- ggplot(tax.plot, aes(x = Year)) +
+  geom_line(aes(y = avg_tax, color = "Average Tax"), linewidth = 1.2) +
+  geom_line(aes(y = avg_price, color = "Average Price"), linewidth = 1.2) +
+  labs(title = "Average Tax and Price of Cigarettes (in 2012 dollars)",
        x = "Year",
-       y = "Dollars (2012)",
+       y = "Price",
        color = "Legend") +
   theme_minimal()
 
-print(taxprice.plot)
+print(tax.price.plot)
 
 
 
-#3. Identify the 5 states with the highest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018. 
+
+
+# 3
 final.data <- final.data %>%
   mutate(Year = as.integer(Year))
 
 ### calculate price difference 
 final.data.q3 <- final.data %>% 
-  filter(Year == 1970) %>% select(state, price_1970=price_cpi) %>%
-  left_join(final.data %>%  filter(Year == 2018) %>% select(state, price_2018=price_cpi), by=c("state")) %>% 
+  filter(Year == 1970) %>% select(state, price_1970=price_real) %>% #### price_real vs price_cpi!!!
+  left_join(final.data %>%  filter(Year == 2018) %>% select(state, price_2018=price_real), by=c("state")) %>% 
   mutate(price_change=price_2018-price_1970)
 
 high.change <- final.data.q3 %>% slice_max(price_change, n=5) %>% mutate (change_group = "high")
@@ -75,10 +75,10 @@ inner_join(change.group %>% select(state, change_group),
 
 
 ## Plot the sales per capita for these states 
-top5.plot <- top.bottom.price %>% filter(change_group=="high") %>% 
+top.5.plot <- top.bottom.price %>% filter(change_group=="high") %>% 
   ggplot(aes(x = Year, y = sales_per_capita, color = state)) +
   stat_summary(fun="mean", geom="line") +
-  labs(title = "Average Packs Sold Per Capita (1970-2018)",
+  labs(title = "Cigarette Sales Per Capita",
        subtitle = "For the 5 States with the Highest Increase in Cigarette Prices",
        x = "Year",
        y = "Packs Sold Per Capita",
@@ -88,42 +88,50 @@ top5.plot <- top.bottom.price %>% filter(change_group=="high") %>%
 print(top.5.plot)
 
 
-# 4. Identify the 5 states with the lowest increases in cigarette prices over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
-bottom5.plot <- top.bottom.price %>% filter(change_group=="low") %>% 
-  ggplot(aes(x = Year, y = sales_per_capita, color = state)) +
-  stat_summary(fun="mean", geom="line") +
-  labs(title = "Average Packs Sold Per Capita (1970-2018)",
-       subtitle = "For the 5 States with the Highest Increase in Cigarette Prices",
-       x = "Year",
-       y = "Packs Sold Per Capita",
-       color = "State") +
-  theme_minimal()
 
-print(bottom.5.plot)
+# 4
 
+### bottom 5
+bottom5.data <- final.data %>%
+  filter(state %in% bottom5.states) %>%
+  group_by(Year, state) %>%
+  summarize(avg_packs_per_capita = mean(sales_per_capita, na.rm = TRUE)) %>%
+  ungroup()
 
+### plot 
+bottom5.plot <- ggplot(bottom5.data, aes(x = Year, y = avg_packs_per_capita, color = state)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 0.8, shape = 16, alpha = 0.5) +
+  labs(
+    title = "Average Packs Sold Per Capita (Top 5 States with Lowest Price Increase)",
+    x = "Year",
+    y = "Average Packs Sold Per Capita",
+    color = "State"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+print(bottom5.plot)
 
-# 5. Compare the trends in sales from the 5 states with the highest price increases to those with the lowest price increases.
-### compute average packs sold per capita for the top and bottom 5 states
-top.5.avg <- top.bottom.price %>%
-  filter(change_group == "high") %>% 
+# 5
+top5.avg <- final.data %>%
+  inner_join(top5.states %>% tibble(state = .), by = "state") %>%  # Efficient filtering
   group_by(Year) %>%
   summarize(avg_packs_top5 = mean(sales_per_capita, na.rm = TRUE)) %>%
   ungroup()
 
-bottom.5.avg <- top.bottom.price %>%
-  filter(change_group == "low") %>%
+bottom5.avg <- final.data %>%
+  inner_join(bottom5.states %>% tibble(state = .), by = "state") %>%  
   group_by(Year) %>%
   summarize(avg_packs_bot5 = mean(sales_per_capita, na.rm = TRUE)) %>%
   ungroup()
 
-### merge the two datasets
-final.data.q4 <- left_join(top.5.avg, bottom.5.avg, by = "Year")
+### merge 
+final.data.q4 <- left_join(top5.avg, bottom5.avg, by = "Year")
 
-### plot the comparison
+### plot 
 comparison.plot <- ggplot(final.data.q4, aes(x = Year)) + 
-  geom_line(aes(y = avg_packs_top5, color = "Top 5 Price Increase"), linewidth = 1) +
-  geom_line(aes(y = avg_packs_bot5, color = "Bottom 5 Price Increase"), linewidth = 1) +
+  geom_line(aes(y = avg_packs_top5, color = "Highest Increase"), linewidth = 1.2) +
+  geom_line(aes(y = avg_packs_bot5, color = "Lowest Increase"), linewidth = 1.2) +
   labs(
     title = "Comparison of Cigarette Sales in States with High vs. Low Price Increases",
     x = "Year",
@@ -137,79 +145,99 @@ print(comparison.plot)
 
 
 #### 1970-1990 
-final.data.70.90 <- final.data %>%
+finaldata.70.90 <- final.data %>%
   filter(Year >= 1970 & Year <= 1990)
 
 
-# 6a. Regress log sales on log prices to estimate the price elasticity of demand over that period.
-### create log transformed variables
-final.data.70.90 <- final.data.70.90 %>%
-  mutate(log_sales = log(sales_per_capita), 
-         log_price = log(price_cpi)) 
+# 6.
+final.data <- final.data %>%
+  mutate(log_sales = log(sales_per_capita),
+         log_price = log(price_real),
+         log_total_tax = log(tax_real))
 
-### run the regression 
-model.a <- lm(log_sales ~ log_price, data = final.data.70.90)
+### regression
+model.a <- lm(log_sales ~ log_price, data = finaldata.70.90)
 summary(model.a)
 
 
-# 7a. Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. 
-### create log transformations 
-final.data.70.90 <- final.data.70.90 %>%
-  mutate(log_sales = log(sales_per_capita),
-         log_price = log(price_cpi),
-         log_total_tax = log(tax_dollar))
+
+# 7.
+
 
 ### run regression 
-library(fixest)
-ivs.a <- feols(log_sales ~ 1 | log_price ~ log_total_tax, data = final.data.70.90)
+ivs.a <- feols(log_sales ~ 1 | log_price ~ log_total_tax, data = final.data %>% filter(Year >= 1970 & Year <= 1990))
 summary(ivs.a)
 
 
 
-# 8a. Show the first stage and reduced-form results from the instrument.
+# 8.
 ### first stage 
-first.stage.a <- lm(log_price ~ log_total_tax, data = final.data.70.90)
+first.stage.a <- feols(log_price ~ log_total_tax, data = final.data %>% filter(Year >= 1970 & Year <= 1990))
 summary(first.stage.a) 
 
+
+#first.stage.a <- lm(log_price ~ log_total_tax, data = finaldata.70.90)
 ### reduced form 
-reduced.form.a <- lm(log_sales ~ log_total_tax, data = final.data.70.90)
+reduced.form.a <- feols(log_sales ~ log_total_tax, data = final.data %>% filter(Year >= 1970 & Year <= 1990))
 summary(reduced.form.a)
 
+## trying to make both into a nice table didnt work
+# Load necessary libraries
+install.packages("broom")
+library(broom)
 
 
 
-#### Questions 6-8 repeated but using data from the years 1991-2015 
+# Summarize both models and extract coefficients and statistics
+#first.stage.a.summary <- summary(first.stage.a)$coefficients
+#reduced.form.a.summary <- summary(reduced.form.a)$coefficients
+
+# Convert the summaries to data frames for easier manipulation
+#first.stage.a.df <- as.data.frame(first.stage.a.summary)
+#reduced.form.a.df <- as.data.frame(reduced.form.a.summary)
+
+
+
+# Add a column to differentiate between the models
+#first.stage.a.df$model <- "First Stage"
+#reduced.form.a.df$model <- "Reduced Form"
+
+# Combine the data frames into one
+#results.df <- rbind(first.stage.a.df, reduced.form.a.df)
+
+# Print the results as a table
+#print(results.df)
+
+
+
+## Same questions but looking at year range 1991-2015
+#### 1991-2015 
 final.data.91.15 <- final.data %>%
   filter(Year >= 1991 & Year <= 2015)
 
 
-# 6b. Regress log sales on log prices to estimate the price elasticity of demand over that period.
-### create log transformed variables
-final.data.91.15 <- final.data.91.15 %>%
-  mutate(log_sales = log(sales_per_capita), 
-         log_price = log(price_cpi)) 
-
-### run regression 
-model.b <- lm(log_sales ~ log_price, data = final.data.91.15)
-summary(model.b)
+# 6.2
+ols.b <- feols(log_sales ~ log_price, data = final.data %>% filter(Year >= 1991 & Year <= 2015))
+summary(ols.b)
 
 
 
-# 7b. Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. 
-### create log transformations 
+
+
+# 7.2 
 final.data.91.15 <- final.data.91.15 %>%
   mutate(log_sales = log(sales_per_capita),
          log_price = log(price_cpi),
          log_total_tax = log(tax_dollar))
 
-### run regression
+### regression
 library(fixest)
 ivs.b <- feols(log_sales ~ 1 | log_price ~ log_total_tax, data = final.data.91.15)
 summary(ivs.b)
 
 
 
-# 8b. Show the first stage and reduced-form results from the instrument.
+# 8.2
 ### first stage 
 first.stage.b <- lm(log_price ~ log_total_tax, data = final.data.91.15)
 summary(first.stage.b) 
@@ -220,7 +248,7 @@ summary(reduced.form.b)
 
 
 
-# 10. Table comparing estimates 
+# 10 Comparison 
 coef.a <- coef(ivs.a)
 coef.b <- coef(ivs.b)  
 
@@ -229,9 +257,13 @@ comparison.table <- data.frame(
   "1991-2015" = coef.b["fit_log_price"])
 
 
+library(knitr)
+rownames(comparison.table) <- "Slope Elasticity"
+kable(comparison.table, col.names = c("1970-1990", "1991-2015"), 
+      caption = "Elasticity Comparison for 1970-1990 and 1991-2015", 
+      format = "markdown", align = "c")
+
 
 
 rm(list = setdiff(ls(), c("tax.change.plot", "tax.price.plot", "top.5.plot", "bot.5.plot", "comparison.plot", "model.a", "ivs.a", "first.stage.a", "reduced.form.a", "model.b", "ivs.b", "first.stage.b", "reduced.form.b", "comparison.table")))
-save.image("submission2/results/homework3_workspace.RData")
-
-
+save.image("submission1/results/homework3_workspace.RData")
