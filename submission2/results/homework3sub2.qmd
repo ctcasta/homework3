@@ -103,12 +103,12 @@ print(comparison.plot)
 
 ```{r} 
 #| echo: false
-#| label: model1
+#| label: ols.1
 
 
 
-model.a.summary <- summary(model1)
-model.a.summary
+ols.1.summary <- summary(ols.1)
+ols.1.summary
 ```
 
 
@@ -118,10 +118,10 @@ model.a.summary
 
 ```{r} 
 #| echo: false
-#| label: ivs1
+#| label: ivs.1
 
-ivs1.summary <- summary(ivs1)
-ivs1.summary
+ivs.1.summary <- summary(ivs.1)
+ivs.1.summary
 ```
 
 
@@ -149,10 +149,10 @@ rf.summary.a
 
 ```{r} 
 #| echo: false
-#| label: model2
+#| label: ols.2
 
-model2.summary <- summary(model2)
-model2.summary
+ols.2.summary <- summary(ols.2)
+ols.2.summary
 ```
 
 
@@ -162,7 +162,7 @@ model2.summary
 
 ```{r} 
 #| echo: false
-#| label: ivs2
+#| label: ivs.2
 
 ivs2.summary <- summary(ivs.2)
 ivs2.summary
