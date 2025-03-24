@@ -1,0 +1,146 @@
+---
+title: "Homework 3"
+subtitle: "ECON 470, Spring 2025"
+author: "Camila Castaneda"
+format:
+  pdf:
+    output-file: "camilacastaneda_hw3_sub2"
+    output-ext:  "pdf"
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+---
+
+```{r}
+#| include: false
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary,
+               kableExtra)
+```
+
+Here is a link to my repository: {https://github.com/ctcasta/homework3}
+
+\newpage 
+
+```{r}
+#| include: false
+#| eval: true
+
+getwd()
+load("/Users/camilacastaneda/Downloads/Econ-470/homework3/submission2/results/homework3sub2_workspace.Rdata")
+
+```
+
+
+\newpage 
+
+## 1. Present a bar graph showing the proportion of states with a change in their cigarette tax in each year from 1970 to 1985.
+
+```{r} 
+#| echo: false
+#| label: taxchange.plot
+
+print(taxchange.plot)
+```
+
+
+\newpage 
+
+## 2. Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.
+
+```{r} 
+#| echo: false
+#| label: taxprice.plot
+
+print(taxprice.plot)
+```
+
+
+
+\newpage 
+## 3. Identify the 5 states with the highest increases in cigarette prices (in dollars) over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r} 
+#| echo: false
+#| label: top5.plot 
+
+print(top5.plot)
+```
+
+
+
+\newpage 
+## 4. Identify the 5 states with the lowest increases in cigarette prices over the time period. Plot the average number of packs sold per capita for those states from 1970 to 2018.
+
+```{r} 
+#| echo: false
+#| label: bottomo5.plot
+
+print(bottom5.plot)
+```
+
+
+\newpage 
+
+## 5. Compare the trends in sales from the 5 states with the highest price increases to those with the lowest price increases.
+
+```{r} 
+#| echo: false
+#| label: comparison.plot
+
+print(comparison.plot)
+```
+
+\newpage 
+
+## The following figure is a refrence for questions 6-9
+
+```{r} 
+#| echo: false
+#| label: tab-coef 
+#| tbl-cap: "Elasticity Estimates from OLS and IV" 
+
+library(modelsummary)
+
+f <- function(x) formatC(x, digits = 0, big.mark = ",", format = "f")
+modelsummary(list("Estimates"=list("OLS"=ols.1, "IV"=ivs.1, "OLS"=ols.2, "IV"=ivs.2), 
+                  "Reduced Form"=list("IV"=reduced.form.a, "IV"=reduced.form.b), 
+                  "First Stage"=list("IV"=first.stage.a, "IV"=first.stage.b)), 
+            shape="rbind", 
+            coef_map=c('log_price'="Log Price", 
+                       'fit_log_price'="Log Price",
+                       'log_total_tax'= "Log Tax"), 
+            gof_map=list(list("raw"="nobs", "clean"="N", "fmt"=f), 
+                          list("raw"="r.squared", "clean"="R2", "fmt"=3)), 
+            output="kableExtra") %>% 
+    add_header_above(c(" "=1, "1970-1990"=2, "1991-2015"=2)) %>% 
+    kable_styling(latex_options = "hold_position")
+
+###table_output
+```
+
+ 
+## 6.1 Focusing only on the time period from 1970 to 1990, regress log sales on log prices to estimate the price elasticity of demand over that period. Interpret your results.
+#### The OLS estimate for the years 1970-1990 is -0.809. This values represnts an inelatic demand. Through this value we can infer that a 1% increase in price would lead to a decrease of 0.809% in sales. 
+
+## 6.2 Focusing only on the time period from 1991 to 2015, regress log sales on log prices to estimate the price elasticity of demand over that period. Interpret your results.
+#### The OLS estimate for the years 1991-2015 is -0.997. This value continues to be inelastic similar to that of the earlier year range. Through this value we can infer that a 1% increase in price would lead to a decrease of 0.997% in sales. 
+
+## 7.1 Again limiting to 1970 to 1990, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. Interpret your results and compare your estimates to those without an instrument. Are they different? If so, why?
+#### The estimate when using an instrument is -0.796 which differs slightly in comparison to its non-instrument comparison of -0.809. This difference could be due to endogenity bias in the OLS estimate; however, the bias is not severe at this time.  
+ 
+## 7.2 Again limiting to 1991 to 2015, regress log sales on log prices using the total (federal and state) cigarette tax (in dollars) as an instrument for log prices. Interpret your results and compare your estimates to those without an instrument. Are they different? If so, why?
+#### The estimate when using an instrument is -1.150 which is a larger difference between estimates with and without an instrument in this year range in comparison to the earlier year range. This difference could be due to a stronger endogeneity bias in the OLS estimate for the years 1991-2015.
+
+## 8.1 Show the first stage and reduced-form results from the instrument.
+#### The first stage and reduced-form results for 1970-1990 are presented in Figure 1 above.
+
+## 8.2 Show the first stage and reduced-form results from the instrument.
+#### The first stage and reduced-form results for 1991-2015 are presented in Figure 1 above.
+
+## 10 Compare your elasticity estimates from 1970-1990 versus those from 1991-2015. Are they different? If so, why?
+#### The elasticity estimates from 1970-1990 (-0.809 OLS, -0.796 IV) and 1991-2015 (-0.997 OLS, -1.150 IV) differ, likely due to changes in consumer behavior in response to prices, market conditions, or stronger endogeneity bias in the later period.
+
